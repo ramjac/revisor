@@ -1,0 +1,42 @@
+{{ define "title"}}
+<title>Revisor Editor</title>
+{{ end }}
+
+{{ define "content" }}
+
+<div class="row">
+  <div id="directory" class="col-md-4">
+    <ul class="list-unstyled">
+      {{ range $key, $value := .Directory }}
+      <li><a href="/{{if $value}}dir{{else}}edit{{end}}/{{ $key }}">
+	  {{ $key }}</a>
+      </li>
+      {{end}}
+    </ul>
+  </div>
+  <div id="editor" class="col-md-8">
+    <form action="/todo/{{.Title}}" method="POST">
+      <div class="form-group">
+	<label for="filePath">List a file or directory to delete including it's path as you see it on the left</label>
+	<input type="text" name="filePath" class="form-control" required />
+      </div>
+      <div class="form-group">
+	<input type="submit" value="Delete" class="btn btn-default">
+      </div>
+    </form>
+    <hr />
+    <form action="/todo/{{.Title}}" method="POST">
+      <div class="form-group">
+	<label for="filePath">List a file or directory to create here ({{ .Title }}).
+	  <br />
+	  Excluding the extension creates a directory</label>
+	<input type="text" name="filePath" class="form-control" required />
+      </div>
+      <div class="form-group">
+	<input type="submit" value="Create" class="btn btn-default">
+      </div>
+    </form>
+  </div>
+</div>
+
+{{ end }}

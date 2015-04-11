@@ -1,0 +1,25 @@
+{{ define "title"}}
+<title>Revisor Editor</title>
+{{ end }}
+
+{{ define "content" }}
+
+<div class="row">
+	<div id="directory" class="col-md-4">
+	  <ul class="list-unstyled">
+	    {{ range $key, $value := .Directory }}
+	    <li><a href="/{{if $value}}dir{{else}}edit{{end}}/{{ $key }}">
+		{{ $key }}</a>
+	    </li>
+	    {{end}}
+	  </ul>
+	</div>
+	<div id="editor" class="col-md-8">
+	  <form action="/save/{{.Title}}" method="POST">
+	    <div class="form-group"><textarea class="form-control" name="body" rows="20">{{printf "%s" .Body}}</textarea></div>
+	    <div class="form-group"><input type="submit" value="Save" class="btn btn-default"></div>
+	  </form>
+	</div>
+      </div>
+
+{{ end }}
