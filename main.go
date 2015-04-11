@@ -10,14 +10,52 @@ import (
 )
 
 var (
-	PathList map[string]bool
-	PathRoot string
+	PathList  map[string]bool
+	PathRoot  string
+	templates map[string]*template.Template
 )
 
 type Page struct {
 	Title     string
 	Body      []byte
 	Directory *map[string]bool
+}
+
+//this is a bit more scalable than we need since we only have one layout
+func initTemplates() {
+	if templates == nil {
+		templates = make(map[string]*template.Template)
+	}
+
+	//think this'll get hard coded at first
+	//config.Templates.Path
+	templatesDir := "./"
+
+	//implement Rob's error handling advice on these errors
+	layouts, err := filepath.Glob(templatesDir + "layouts/*.tmpl")
+	if err != nil {
+		fmt.Println("layout could not be loaded")
+	}
+	includes, err := filepath.Glob(templatesDir + "includes/*.tmpl")
+	if err != nil {
+		fmt.Println("include could not be loaded")
+	}
+
+	fmt.Println("Layouts: ", len(layouts))
+	fmt.Println("Includes: ", len(includes))
+
+	// Generate our templates map from our layouts/ and includes/ directories
+	for _, layout := range layouts {
+		files := append(includes, layout)
+		templates[filepath.Base(layout)] = template.Must(template.ParseFiles(files...))
+		fmt.Println("Found layout: ", layout)
+	}
+	for k, v := range templates {
+
+		fmt.Println("Found template: ", k)
+		fmt.Println("val: ", v)
+
+	}
 }
 
 func (p *Page) save() error {
@@ -37,6 +75,7 @@ func loadPage(title string) (*Page, error) {
 func editHandler(w http.ResponseWriter, r *http.Request) {
 	//fmt.Fprintf(w, "Received: %s", r.URL.Path[1:])
 	//I need to prevent navigation up a dir here with some regex
+	fmt.Println("edit request")
 	title := r.URL.Path[len("/edit/"):]
 	p, err := loadPage(title)
 	if err != nil {
@@ -46,20 +85,17 @@ func editHandler(w http.ResponseWriter, r *http.Request) {
 	//p.Directory = make([]string, len(PathList))
 	//p.Directory = PathList[0:]
 	p.Directory = &PathList
-	t, _ := template.ParseFiles("index.html")
-	//fmt.Println(p.Title)
-	//fmt.Println(err)
-	t.Execute(w, p)
+
+	renderTemplate(w, "index.tmpl", p)
 }
 
 func dirHandler(w http.ResponseWriter, r *http.Request) {
-	t, _ := template.ParseFiles("dir.html")
-
+	fmt.Println("directory request")
 	p := Page{}
 	p.Title = r.URL.Path[len("/dir/"):]
 	p.Directory = &PathList
 
-	t.Execute(w, p)
+	renderTemplate(w, "dir.tmpl", &p)
 }
 
 func saveHandler(w http.ResponseWriter, r *http.Request) {
@@ -88,8 +124,31 @@ func visit(path string, f os.FileInfo, err error) error {
 	return nil
 }
 
+func renderTemplate(w http.ResponseWriter, name string, p *Page) error {
+	fmt.Println("rendering template")
+	//check that the template exists
+	tmpl, ok := templates[name]
+	if !ok {
+		fmt.Println("not tmpl found")
+		return fmt.Errorf("No template by found by the name %s", name)
+	}
+	fmt.Println("tmpl: ", tmpl)
+	//this was in the example but I'm not sure it is really necessary
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+
+	//base our layout page
+	tmpl.ExecuteTemplate(w, "base", p)
+
+	return nil
+
+	//the old way
+	//t, _ := template.ParseFiles(tmpl + ".html")
+	//t.Execute(w, p)
+}
+
 func main() {
 	fmt.Println("So it goes")
+	initTemplates()
 
 	//should add configuration options to append to this path
 	PathList = make(map[string]bool)
