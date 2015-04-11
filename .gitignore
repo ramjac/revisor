@@ -23,3 +23,6 @@ _testmain.go
 
 # text testing pages
 *.txt
+
+#ignore the website's actual folder
+website/
